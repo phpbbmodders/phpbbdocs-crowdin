@@ -27,11 +27,10 @@ in a few deliberate ways — see [Design notes](#design-notes) below.
   docs). Only a fragment whose source files actually exist in the target
   docs project is included in the rendered config — see
   [Design notes](#design-notes).
-- **`docs-project.conf.example`**, **`docs-languages.conf.example`**,
-  **`docs-custom-languages.conf.example`** — templates for the optional/
-  required per-docs-project configuration files `crowdin-init.sh` reads from
-  the *target* docs project's own repository root (not from this tool's
-  repository) — see each file for what it controls.
+- **`docs-project.conf.example`** — template for the optional
+  `docs-project.conf` override file `crowdin-init.sh` reads from the
+  *target* docs project's own repository root (not from this tool's
+  repository) — see the file for what it controls.
 
 ## Requirements
 
@@ -55,21 +54,17 @@ translations back into the docs project.
 A few places this tool deliberately departs from phpbb-crowdin's approach,
 because the two domains aren't actually the same:
 
-- **Target languages are discovered, not a fixed universal list.** phpBB
-  extensions want translation into phpBB's whole ~38-language ecosystem from
-  day one. A docs project instead adds a language deliberately, one real
-  translation at a time (phpbbdocs-hugo currently has English, Danish,
-  French, and German). `crowdin-init.sh` scans the docs project's own
-  `content/<lang>/` directories and requires a `docs-languages.conf` mapping
-  file in that project once any exist, rather than pre-populating every
-  Crowdin language phpBB itself supports.
-- **No default honorific-split custom languages.** phpBB's language packs
-  offer formal/casual variants (e.g. German Du/Sie) as independent targets.
-  A docs project typically picks one register per language up front instead
-  — phpbbdocs-hugo's German content is the formal register only, documented
-  as such in its own `docs/phpbb-hugo-languages.md`, and targets Crowdin's
-  plain `de`. `docs-custom-languages.conf` exists for a docs project that
-  genuinely needs a split, but is empty by default.
+- **Target languages and custom honorific variants are the same fixed list
+  phpbb-crowdin uses**, not discovered from the docs project's own
+  `content/<lang>/` directories. A docs project invites translation into
+  phpBB's whole language ecosystem the same way a phpBB extension does, even
+  before it has a directory for a given language — e.g. phpbbdocs-hugo
+  currently only has English, Danish, French, and German content, but its
+  Crowdin project offers every language phpbb-crowdin's `PHPBB_LANGUAGES` and
+  `CUSTOM_LANGUAGES` do (German's formal/casual split included), since
+  translators shouldn't have to wait for a directory to exist first. See
+  `DOCS_LANGUAGES`/`CUSTOM_LANGUAGES` in `crowdin-init.sh` — kept identical to
+  phpbb-crowdin's own arrays.
 - **Project identity has no composer.json to read.** A docs project built
   this way has no package manifest. Identity is derived from the docs
   project's git remote (or directory name with no remote), with an optional

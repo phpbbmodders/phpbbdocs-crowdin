@@ -5,13 +5,15 @@
 #
 # Purpose:
 #   Creates or updates the Crowdin project backing a phpBB documentation
-#   project's localization (e.g. phpbbdocs-hugo), ensures every target
-#   language the docs project already has a content/<lang>/ directory
-#   for exists on Crowdin (plus any project-specific custom language
-#   variants), then either uploads DocBook 4 XML source files to
-#   Crowdin or downloads completed translations back into the docs
-#   project, using the Crowdin CLI driven by a runtime-generated
-#   crowdin.yml built from crowdin.yml.template and fragments/.
+#   project's localization (e.g. phpbbdocs-hugo), ensures phpBB's whole
+#   target language set (plus formal/casual honorific variants) exists
+#   on Crowdin - the same full set phpbb-crowdin offers phpBB extensions,
+#   since a docs project invites translation into any of them even
+#   before it has a directory for that language - then either uploads
+#   DocBook 4 XML source files to Crowdin or downloads completed
+#   translations back into the docs project, using the Crowdin CLI
+#   driven by a runtime-generated crowdin.yml built from
+#   crowdin.yml.template and fragments/.
 #
 # Usage:
 #   crowdin-init.sh [OPTIONS] [DOCS_PATH]
@@ -26,18 +28,6 @@
 #   docs-project.conf in the resolved docs project root - optional;
 #     overrides the project identifier/name/description otherwise
 #     derived from the docs project's git remote or directory name.
-#   docs-languages.conf in the resolved docs project root - required
-#     whenever the docs project has any content/<lang>/ directory other
-#     than content/en/. One "dircode|crowdin_locale|display_name" line
-#     per target language - see docs-languages.conf.example.
-#   docs-custom-languages.conf in the resolved docs project root -
-#     optional. One "crowdin_id|display_name|dialect_of|three_letter_code"
-#     line per custom Crowdin language variant the docs project needs
-#     (e.g. a formal/casual honorific split) - see
-#     docs-custom-languages.conf.example. Most docs projects need none
-#     of these, since (unlike phpBB's own language packs) a docs
-#     project typically picks one register per language up front - see
-#     README.md.
 #   CROWDIN_API_TOKEN - required Crowdin Personal Access Token.
 #   CROWDIN_PROJECT_ID - optional numeric project ID override, used
 #     instead of looking the project up by identifier.
@@ -115,8 +105,6 @@ CONFIG_SET_LANGUAGE_ACCESS_POLICY=false
 
 DOCS_ROOT=""
 DOCS_PROJECT_FILE=""
-DOCS_LANGUAGES_FILE=""
-DOCS_CUSTOM_LANGUAGES_FILE=""
 
 PROJECT_ID=""
 CURRENT_PROJECT=""
@@ -152,6 +140,102 @@ SOURCE_TREE_FRAGMENTS=(
 
 
 # ==============================================================================
+# Custom phpBB Language Variants
+# ==============================================================================
+#
+# Format:
+#
+#   Crowdin ID|Name|Dialect Of|Three Letter Code
+#
+# Identical to phpbb-crowdin's own list (https://github.com/phpbbmodders/
+# phpbb-crowdin) - a docs project invites translation into phpBB's whole
+# language ecosystem, formal/casual honorific variants included, the same
+# as a phpBB extension does, rather than only the languages it happens to
+# have content for already.
+#
+# ==============================================================================
+
+CUSTOM_LANGUAGES=(
+    'de-x-sie|German (Formal Honorifics)|de|des'
+    'es-x-tu|Spanish (Casual Honorifics)|es-ES|esx'
+    'nl-x-formal|Dutch (Formal Honorifics)|nl|nlx'
+    'hr-x-vi|Croatian (Formal Honorifics)|hr|hrx'
+)
+
+
+# ==============================================================================
+# phpBB Target Languages
+# ==============================================================================
+#
+# Format:
+#
+#   Docs_directory|Crowdin_language_ID|Display_name
+#
+# Identical to phpbb-crowdin's PHPBB_LANGUAGES list - see above. A docs
+# project's content/<lang>/ directory naming follows the same convention
+# phpBB's own language packs use (confirmed for phpbbdocs-hugo's existing
+# da/fr/de directories, which match this list exactly); a docs project
+# need not have every directory yet for its Crowdin project to offer every
+# target - translators can start on a language before a docs project has
+# a directory for it, the same as phpbb-crowdin's own model.
+#
+# ==============================================================================
+
+DOCS_LANGUAGES=(
+    'en_us|en-US|American English'
+
+    'ar|ar|Arabic'
+    'az|az|Azerbaijani'
+    'pt_br|pt-BR|Brazilian Portuguese'
+    'bg|bg|Bulgarian'
+    'ca|ca|Catalan'
+
+    'hr|hr|Croatian'
+    'hr_x_vi|hr-x-vi|Croatian (Formal Honorifics)'
+
+    'da|da|Danish'
+
+    'nl|nl|Dutch'
+    'nl_x_formal|nl-x-formal|Dutch (Formal Honorifics)'
+
+    'et|et|Estonian'
+    'fi|fi|Finnish'
+    'fr|fr|French'
+    'gd|gd|Gaelic'
+
+    'de|de|German'
+    'de_x_sie|de-x-sie|German (Formal Honorifics)'
+
+    'el|el|Greek'
+    'he|he|Hebrew'
+    'it|it|Italian'
+    'ja|ja|Japanese'
+    'lt|lt|Lithuanian'
+
+    'zh_cmn_hans|zh-CN|Mandarin Chinese (Simplified Script)'
+    'zh_cmn_hant|zh-TW|Mandarin Chinese (Traditional Script)'
+
+    'fa|fa|Persian'
+    'pl|pl|Polish'
+    'pt|pt-PT|Portuguese (Formal)'
+    'ro|ro|Romanian'
+    'ru|ru|Russian'
+
+    'sr|sr|Serbian (Cyrillic Script)'
+    'sr_x_latin|sr-CS|Serbian (Latin Script)'
+
+    'sk|sk|Slovak'
+    'sl|sl|Slovenian'
+
+    'es|es-ES|Spanish'
+    'es_x_tu|es-x-tu|Spanish (Casual Honorifics)'
+
+    'tr|tr|Turkish'
+    'uk|uk|Ukrainian'
+)
+
+
+# ==============================================================================
 # Language Runtime State
 # ==============================================================================
 
@@ -161,8 +245,6 @@ declare -A LANGUAGE_DISPLAY_NAME=()
 
 DOCS_LANGUAGE_CODES=()
 CROWDIN_TARGET_IDS=()
-
-CUSTOM_LANGUAGE_RECORDS=()
 
 MATCHED_FRAGMENTS=()
 
@@ -493,8 +575,6 @@ if command -v git >/dev/null 2>&1 &&
 fi
 
 DOCS_PROJECT_FILE="$DOCS_ROOT/docs-project.conf"
-DOCS_LANGUAGES_FILE="$DOCS_ROOT/docs-languages.conf"
-DOCS_CUSTOM_LANGUAGES_FILE="$DOCS_ROOT/docs-custom-languages.conf"
 
 
 # ==============================================================================
@@ -975,23 +1055,7 @@ ensure_custom_language()
 
 section "Custom Crowdin Languages"
 
-if [[ -f "$DOCS_CUSTOM_LANGUAGES_FILE" ]]; then
-    success "Using custom languages: $DOCS_CUSTOM_LANGUAGES_FILE"
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line=$(trim "$line")
-
-        [[ -n "$line" ]] || continue
-        [[ "$line" != \#* ]] || continue
-
-        CUSTOM_LANGUAGE_RECORDS+=("$line")
-    done < "$DOCS_CUSTOM_LANGUAGES_FILE"
-else
-    warn \
-        "No docs-custom-languages.conf found. This docs project needs no custom language variants."
-fi
-
-for record in "${CUSTOM_LANGUAGE_RECORDS[@]}"; do
+for record in "${CUSTOM_LANGUAGES[@]}"; do
     IFS='|' read -r \
         custom_id \
         custom_name \
@@ -1008,55 +1072,10 @@ done
 
 
 # ==============================================================================
-# Discover Target Languages
+# Validate Target Languages
 # ==============================================================================
 
 section "Docs Languages"
-
-DISCOVERED_LANGUAGE_DIRS=()
-
-if [[ -d "$DOCS_ROOT/content" ]]; then
-    shopt -s nullglob
-
-    for dir in "$DOCS_ROOT"/content/*/; do
-        code=$(basename -- "$dir")
-
-        [[ "$code" == "$SOURCE_LANGUAGE" ]] && continue
-
-        DISCOVERED_LANGUAGE_DIRS+=("$code")
-    done
-
-    shopt -u nullglob
-fi
-
-if ((${#DISCOVERED_LANGUAGE_DIRS[@]} > 0)) &&
-    [[ ! -f "$DOCS_LANGUAGES_FILE" ]]; then
-
-    error \
-        "Found content/<lang>/ director$([[ ${#DISCOVERED_LANGUAGE_DIRS[@]} -eq 1 ]] && echo y || echo ies) but no docs-languages.conf: ${DISCOVERED_LANGUAGE_DIRS[*]}"
-
-    error \
-        "Create docs-languages.conf in '$DOCS_ROOT' - see docs-languages.conf.example."
-
-    exit 1
-fi
-
-DOCS_LANGUAGE_RECORDS=()
-
-if [[ -f "$DOCS_LANGUAGES_FILE" ]]; then
-    success "Using language mapping: $DOCS_LANGUAGES_FILE"
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        line=$(trim "$line")
-
-        [[ -n "$line" ]] || continue
-        [[ "$line" != \#* ]] || continue
-
-        DOCS_LANGUAGE_RECORDS+=("$line")
-    done < "$DOCS_LANGUAGES_FILE"
-else
-    warn "No docs-languages.conf found. No target languages to sync."
-fi
 
 printf '%-22s %-20s %s\n' \
     "Docs directory" \
@@ -1068,17 +1087,12 @@ printf '%-22s %-20s %s\n' \
     "--------------------" \
     "--------"
 
-for record in "${DOCS_LANGUAGE_RECORDS[@]}"; do
+for record in "${DOCS_LANGUAGES[@]}"; do
     IFS='|' read -r \
         docs_code \
         crowdin_id \
         display_name \
         <<< "$record"
-
-    array_contains "$docs_code" "${DISCOVERED_LANGUAGE_DIRS[@]}" || {
-        warn \
-            "docs-languages.conf lists '$docs_code', but content/$docs_code/ was not found - listing anyway."
-    }
 
     api_request GET "/languages/$crowdin_id"
 
@@ -1429,7 +1443,7 @@ for language_id in "${CURRENT_LANGUAGES[@]}"; do
     CURRENT_LANGUAGE_SET["$language_id"]=1
 done
 
-# Target languages present in DOCS_LANGUAGE_RECORDS but missing from
+# Target languages present in DOCS_LANGUAGES but missing from
 # the live project; these will be added below.
 LANGUAGES_TO_ADD=()
 
@@ -1439,7 +1453,7 @@ for language_id in "${CROWDIN_TARGET_IDS[@]}"; do
     fi
 done
 
-# Target languages present on Crowdin but not in DOCS_LANGUAGE_RECORDS.
+# Target languages present on Crowdin but not in DOCS_LANGUAGES.
 # These are reported but deliberately left untouched (never removed),
 # in case they were added manually or by another tool.
 EXTRA_LANGUAGES=()
@@ -1753,7 +1767,7 @@ printf '%-24s %d\n' \
 
 printf '%-24s %d\n' \
     "Custom variants:" \
-    "${#CUSTOM_LANGUAGE_RECORDS[@]}"
+    "${#CUSTOM_LANGUAGES[@]}"
 
 printf '%-24s %d\n' \
     "Source trees synced:" \
