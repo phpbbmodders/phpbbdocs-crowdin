@@ -1,0 +1,13 @@
+  # Included when the docs repo has a top-level proteus_doc_en.xml
+  # (the DocBook 4 "book" file XSLT-transforms into the Hugo site's
+  # front matter/navigation).
+  - source: "/proteus_doc_en.xml"
+    translation: "/proteus_doc_%locale%.xml"
+    type: "xml"
+    translate_content: 1
+    translate_attributes: 0
+    content_segmentation: 1
+
+    languages_mapping:
+      locale:
+__DOCS_LANGUAGE_MAPPING__

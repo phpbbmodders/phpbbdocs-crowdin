@@ -1,0 +1,25 @@
+# ==============================================================================
+# Docs Project Target Languages
+# ==============================================================================
+#
+# Copy to docs-languages.conf in the docs project's own repository root
+# (not this tool's repository). Required whenever the docs project has
+# any content/<lang>/ directory other than content/en/ — crowdin-init.sh
+# refuses to guess a Crowdin language ID for a directory it can't map.
+#
+# Format:
+#
+#   docs_directory|Crowdin_language_ID|Display_name
+#
+# docs_directory is the project's own content/<docs_directory>/ name.
+# Crowdin_language_ID must be a real Crowdin language (base or custom —
+# see docs-custom-languages.conf.example). This is a mapping, not a
+# fixed universal list: unlike phpbb-crowdin, only the languages a docs
+# project already has content for are listed, since (unlike phpBB's
+# language packs) a docs project adds languages deliberately, one real
+# translation at a time.
+# ==============================================================================
+
+da|da|Danish
+fr|fr|French
+de|de|German (Formal Honorifics)

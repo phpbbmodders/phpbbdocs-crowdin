@@ -1,0 +1,17 @@
+# ==============================================================================
+# Docs Project Identity Override (optional)
+# ==============================================================================
+#
+# Copy to docs-project.conf in the docs project's own repository root
+# (not this tool's repository) to override the project identifier,
+# display name, or description crowdin-init.sh would otherwise derive
+# from the docs project's git remote or directory name.
+#
+# Omit this file entirely if the derived defaults are fine.
+# ==============================================================================
+
+PROJECT_NAME=phpBB Documentation (Hugo)
+
+PROJECT_IDENTIFIER=phpbbdocs-hugo
+
+PROJECT_DESCRIPTION=phpBB 3.3 end-user and developer documentation, built with Hugo.

@@ -1,0 +1,13 @@
+  # Included when the docs repo has dev-docs-docbook/en/ (developer
+  # docs, pandoc-converted from reStructuredText to DocBook 4, nested
+  # under one subdirectory per topic).
+  - source: "/dev-docs-docbook/en/**/*.dbk"
+    translation: "/dev-docs-docbook/%locale%/**/%original_file_name%"
+    type: "xml"
+    translate_content: 1
+    translate_attributes: 0
+    content_segmentation: 1
+
+    languages_mapping:
+      locale:
+__DOCS_LANGUAGE_MAPPING__

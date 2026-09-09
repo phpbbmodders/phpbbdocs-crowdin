@@ -1,0 +1,22 @@
+# ==============================================================================
+# Custom Crowdin Language Variants (optional)
+# ==============================================================================
+#
+# Copy to docs-custom-languages.conf in the docs project's own
+# repository root (not this tool's repository). Most docs projects
+# need none of these: unlike phpBB's own language packs, a docs
+# project typically picks one honorific register per language up
+# front (phpbbdocs-hugo's German content is the formal register only,
+# documented as such, and targets Crowdin's plain "de") rather than
+# offering both as separate targets.
+#
+# Only add an entry here if this specific docs project genuinely needs
+# a second, independent register of a language as its own Crowdin
+# target (mirroring phpbb-crowdin's approach for phpBB extensions).
+#
+# Format:
+#
+#   Crowdin ID|Name|Dialect Of|Three Letter Code
+# ==============================================================================
+
+# de-x-sie|German (Formal Honorifics)|de|des

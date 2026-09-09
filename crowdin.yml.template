@@ -1,0 +1,27 @@
+# ==============================================================================
+# Shared phpBB Documentation Crowdin Configuration Template
+# ==============================================================================
+#
+# Values supplied by crowdin-init.sh:
+#
+#   CROWDIN_PROJECT_ID
+#   CROWDIN_PERSONAL_TOKEN
+#   CROWDIN_BASE_PATH
+#
+# This is the template's fixed header only. crowdin-init.sh appends one
+# fragment from fragments/ per DocBook-XML source tree that actually
+# exists in the target docs repository (see README.md) — a glob that
+# matches zero files fails Crowdin CLI's own config lint outright
+# (confirmed live), so a source tree a given docs repo doesn't have
+# must never appear in its rendered files: list at all.
+# ==============================================================================
+
+project_id_env: CROWDIN_PROJECT_ID
+api_token_env: CROWDIN_PERSONAL_TOKEN
+base_path_env: CROWDIN_BASE_PATH
+
+base_url: "https://api.crowdin.com"
+
+preserve_hierarchy: true
+
+files:

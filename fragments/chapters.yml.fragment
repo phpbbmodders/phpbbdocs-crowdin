@@ -1,0 +1,12 @@
+  # Included when the docs repo has content/en/chapters/ (hand-authored
+  # end-user DocBook 4 chapters, one file per chapter).
+  - source: "/content/en/chapters/*.xml"
+    translation: "/content/%locale%/chapters/%original_file_name%"
+    type: "xml"
+    translate_content: 1
+    translate_attributes: 0
+    content_segmentation: 1
+
+    languages_mapping:
+      locale:
+__DOCS_LANGUAGE_MAPPING__
