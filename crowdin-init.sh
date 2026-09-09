@@ -171,13 +171,16 @@ CUSTOM_LANGUAGES=(
 #
 #   Docs_directory|Crowdin_language_ID|Display_name
 #
-# Identical to phpbb-crowdin's PHPBB_LANGUAGES list - see above. A docs
-# project's content/<lang>/ directory naming follows the same convention
-# phpBB's own language packs use (confirmed for phpbbdocs-hugo's existing
-# da/fr/de directories, which match this list exactly); a docs project
-# need not have every directory yet for its Crowdin project to offer every
-# target - translators can start on a language before a docs project has
-# a directory for it, the same as phpbb-crowdin's own model.
+# Matches phpbb-crowdin's PHPBB_LANGUAGES list, plus Czech ("cs" -
+# confirmed via the real official Czech localization,
+# https://github.com/R3gi/phpbb-cz - a gap in phpbb-crowdin's own list
+# worth adding there too). A docs project's content/<lang>/ directory
+# naming follows the same convention phpBB's own language packs use
+# (confirmed for phpbbdocs-hugo's existing da/fr/de directories, which
+# match this list exactly); a docs project need not have every
+# directory yet for its Crowdin project to offer every target -
+# translators can start on a language before a docs project has a
+# directory for it, the same as phpbb-crowdin's own model.
 #
 # ==============================================================================
 
@@ -192,6 +195,8 @@ DOCS_LANGUAGES=(
 
     'hr|hr|Croatian'
     'hr_x_vi|hr-x-vi|Croatian (Formal Honorifics)'
+
+    'cs|cs|Czech'
 
     'da|da|Danish'
 
