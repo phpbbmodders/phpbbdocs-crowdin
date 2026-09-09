@@ -13,7 +13,10 @@
 #   DocBook 4 XML source files to Crowdin or downloads completed
 #   translations back into the docs project, using the Crowdin CLI
 #   driven by a runtime-generated crowdin.yml built from
-#   crowdin.yml.template and fragments/.
+#   crowdin.yml.template and fragments/. With -s/--seed-untranslated,
+#   also uploads this docs project's own local translation for any
+#   language still at 0% on Crowdin, so translators start from real
+#   work instead of the bare English source.
 #
 # Usage:
 #   crowdin-init.sh [OPTIONS] [DOCS_PATH]
@@ -77,6 +80,7 @@ SCRIPT_DIR=$(
 DRY_RUN=false
 DOWNLOAD_MODE=false
 DOWNLOAD_DRY_RUN=false
+SEED_UNTRANSLATED=false
 
 CONFIG_FILE="$SCRIPT_DIR/crowdin.conf"
 CROWDIN_CLI_TEMPLATE="$SCRIPT_DIR/crowdin.yml.template"
@@ -316,6 +320,10 @@ Options:
   -n, --dry-run           Preview project changes and source upload.
       --download          Download completed translations from Crowdin.
       --download-dry-run  Preview translation download.
+  -s, --seed-untranslated Upload the local translation for any language
+                           Crowdin still shows at 0% translated, so
+                           translators start from the docs project's own
+                           existing work instead of from scratch.
   -h, --help              Show help.
 
 Arguments:
@@ -494,6 +502,11 @@ while (($# > 0)); do
             shift
             ;;
 
+        -s|--seed-untranslated)
+            SEED_UNTRANSLATED=true
+            shift
+            ;;
+
         -h|--help)
             usage
             exit 0
@@ -539,6 +552,13 @@ if [[ "$DRY_RUN" == "true" &&
     printf '%s\n' \
         "Use --download-dry-run to preview translation downloads." >&2
 
+    exit 1
+fi
+
+if [[ "$SEED_UNTRANSLATED" == "true" &&
+    "$DOWNLOAD_MODE" == "true" ]]; then
+
+    error "--seed-untranslated cannot be combined with --download."
     exit 1
 fi
 
@@ -1662,6 +1682,147 @@ prepare_crowdin_cli()
 
 
 # ==============================================================================
+# Seed Untranslated Languages
+# ==============================================================================
+
+# For each target language where every one of its files is still at
+# 0% translated on Crowdin, check whether this docs project already
+# has a real local translation for it (a per-language file that
+# exists and is not byte-identical to its English source) and upload
+# it as that language's starting translation via `crowdin upload
+# translations --language`, rather than leaving translators to start
+# from the English source with nothing to build on.
+#
+# NOTE: the exact JSON shape of `crowdin status translation --output
+# json` (a translationProgress percentage per language, per Crowdin's
+# API v2 "Translation Progress" docs) could not be verified against a
+# real Crowdin project in this session - confirm the jq path below
+# against a real project before relying on it in production.
+seed_untranslated_languages()
+{
+    local docs_code
+    local crowdin_id
+    local frag_record
+    local record_fragment
+    local detection_glob
+    local lang_glob
+    local lang_file
+    local en_file
+    local has_local_translation
+    local -a lang_matches
+    local status_json
+    local translation_progress
+
+    section "Seeding Untranslated Languages"
+
+    for docs_code in "${DOCS_LANGUAGE_CODES[@]}"; do
+        crowdin_id="${DOCS_TO_CROWDIN[$docs_code]}"
+
+        has_local_translation=false
+
+        for frag_record in "${SOURCE_TREE_FRAGMENTS[@]}"; do
+            IFS='|' read -r record_fragment detection_glob <<< "$frag_record"
+
+            array_contains "$record_fragment" "${MATCHED_FRAGMENTS[@]}" ||
+                continue
+
+            lang_glob="${detection_glob/\/en\//\/$docs_code\/}"
+            lang_glob="${lang_glob/_en./_$docs_code.}"
+
+            shopt -s globstar nullglob
+
+            # shellcheck disable=SC2206 # deliberate: $lang_glob is a
+            # glob pattern, not a plain value to quote.
+            lang_matches=("$DOCS_ROOT"/$lang_glob)
+
+            shopt -u globstar nullglob
+
+            for lang_file in "${lang_matches[@]}"; do
+                # A pattern with no glob metacharacters (e.g. the
+                # proteus-book fragment's literal
+                # "proteus_doc_en.xml") isn't expanded by nullglob at
+                # all - it "matches" itself whether or not the file
+                # actually exists, so existence must be checked
+                # explicitly here rather than trusted from the glob.
+                [[ -f "$lang_file" ]] || continue
+
+                en_file="${lang_file/\/$docs_code\//\/en\/}"
+                en_file="${en_file/_$docs_code\./_en.}"
+
+                if [[ -f "$en_file" ]] &&
+                    ! cmp -s "$lang_file" "$en_file"; then
+
+                    has_local_translation=true
+                    break 2
+                fi
+            done
+        done
+
+        if [[ "$has_local_translation" != "true" ]]; then
+            continue
+        fi
+
+        status_json=$(
+            crowdin status translation \
+                --config "$RUNTIME_CROWDIN_CONFIG" \
+                --language "$crowdin_id" \
+                --output json \
+                --no-colors \
+                --no-progress \
+                2>/dev/null
+        ) || {
+            warn \
+                "Could not read Crowdin translation status for '$crowdin_id' - skipping."
+            continue
+        }
+
+        # max, not min: only ever seed a language when EVERY one of
+        # its files is still untouched. Uploading translations
+        # overwrites matching strings on Crowdin, so this must never
+        # fire while a real translator has made any progress on any
+        # file for this language.
+        translation_progress=$(
+            jq -r \
+                '[.[].translationProgress] | max // empty' \
+                <<< "$status_json" \
+                2>/dev/null
+        )
+
+        if [[ -z "$translation_progress" ]]; then
+            warn \
+                "Could not determine translation progress for '$crowdin_id' - skipping."
+            continue
+        fi
+
+        if ((translation_progress != 0)); then
+            continue
+        fi
+
+        if [[ "$DRY_RUN" == "true" ]]; then
+            action \
+                "Would seed '$crowdin_id' from the local $docs_code translation (0% translated on Crowdin)."
+            continue
+        fi
+
+        action \
+            "Seeding '$crowdin_id' from the local $docs_code translation (0% translated on Crowdin)..."
+
+        crowdin upload translations \
+            --config "$RUNTIME_CROWDIN_CONFIG" \
+            --language "$crowdin_id" \
+            --no-colors \
+            --no-progress || {
+            error \
+                "Failed to seed translation for '$crowdin_id'."
+            return 1
+        }
+
+        success "Seeded '$crowdin_id' from the local $docs_code translation."
+    done
+}
+
+
+# ==============================================================================
 # Translation Download
 # ==============================================================================
 
@@ -1739,6 +1900,10 @@ else
             }
 
             success "Source synchronization completed."
+        fi
+
+        if [[ "$SEED_UNTRANSLATED" == "true" ]]; then
+            seed_untranslated_languages || exit 1
         fi
     else
         printf '%-24s %s\n' \

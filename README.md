@@ -49,6 +49,14 @@ Add `-n`/`--dry-run` to preview project changes and the source upload
 without applying them, or `--download`/`--download-dry-run` to pull completed
 translations back into the docs project.
 
+Add `-s`/`--seed-untranslated` to also upload this docs project's own local
+translation for any language that is still at 0% translated on Crowdin
+(every one of its files, not just some) — this only ever adds a starting
+point for translators; it never touches a language once real work exists for
+it on Crowdin, however partial. Requires a local translation that actually
+differs from the English source; a language directory that's just an
+untouched copy of English is not seeded.
+
 ## Design notes
 
 A few places this tool deliberately departs from phpbb-crowdin's approach,
