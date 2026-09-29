@@ -1693,11 +1693,10 @@ prepare_crowdin_cli()
 # translations --language`, rather than leaving translators to start
 # from the English source with nothing to build on.
 #
-# NOTE: the exact JSON shape of `crowdin status translation --output
-# json` (a translationProgress percentage per language, per Crowdin's
-# API v2 "Translation Progress" docs) could not be verified against a
-# real Crowdin project in this session - confirm the jq path below
-# against a real project before relying on it in production.
+# `crowdin status translation --output json` (Crowdin CLI 5) reports
+# the percentage in a `translation` field, not the API's
+# `translationProgress`; confirmed against the real phpbbdocs-hugo
+# project on 09/12/2026.
 seed_untranslated_languages()
 {
     local docs_code
@@ -1783,7 +1782,7 @@ seed_untranslated_languages()
         # file for this language.
         translation_progress=$(
             jq -r \
-                '[.[].translationProgress] | max // empty' \
+                '[.[].translation] | max // empty' \
                 <<< "$status_json" \
                 2>/dev/null
         )
